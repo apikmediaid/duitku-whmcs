@@ -74,14 +74,23 @@ require_once __DIR__ . '/../duitku-lib/Duitku.php';
 		$amount = $amount / $currencyCurrent['rate'];
 	}
 
-	//round up amount for decimals
+	// Round the original invoice amount up to a whole unit before calculating any surcharge.
 	$amount = (int)ceil($amount);
+	$invoiceAmount = $amount;
+	$customerFeeAmount = 0;
+	$paymentMethod = $_REQUEST['paymentMethod'];
+	$qrPaymentMethods = array('NQ', 'SQ', 'LQ', 'GQ');
+	$feeBearer = isset($config['feeBearer']) ? strtolower(trim($config['feeBearer'])) : 'merchant';
+	$feePercent = isset($config['customerFeePercent']) ? (float)$config['customerFeePercent'] : 0.70;
+	// Apply surcharge only for individual QRIS channels when Customer is configured to bear the fee.
+	if (in_array($paymentMethod, $qrPaymentMethods, true) && $feeBearer === 'customer' && $feePercent > 0) {
+		$customerFeeAmount = (int)ceil($invoiceAmount * ($feePercent / 100));
+		$amount = $invoiceAmount + $customerFeeAmount;
+	}
 
 	//System parameters
 	$companyName = $params->companyname;
     $returnUrl = $params->returnurl;
-	$paymentMethod = $_REQUEST['paymentMethod'];
-	
 	// Client Parameters
     $firstname = $params->clientdetails->firstname;
     $lastname = $params->clientdetails->lastname;

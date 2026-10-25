@@ -183,6 +183,19 @@ if ($status == '00' && $validatedTransaction) {
 }
 
 if ($success) {
+	// QRIS surcharge is included in Duitku's collected amount, but must not be applied
+	// as invoice principal or it can overpay the WHMCS invoice.
+	$invoicePaymentAmount = $paymentAmount;
+	$paymentFee = 0;
+	$qrPaymentMethods = array('NQ', 'SQ', 'LQ', 'GQ');
+	$feeBearer = isset($gatewayParams['feeBearer']) ? strtolower(trim($gatewayParams['feeBearer'])) : 'merchant';
+	if (in_array($paymentCode, $qrPaymentMethods, true) && $feeBearer === 'customer') {
+		$invoiceBalance = (float)getInvoiceBalance($order_id);
+		if ($invoiceBalance > 0 && $paymentAmount >= $invoiceBalance) {
+			$invoicePaymentAmount = $invoiceBalance;
+			$paymentFee = max(0, $paymentAmount - $invoiceBalance);
+		}
+	}
 	/**
 	 * Add Invoice Payment.
 	 *
@@ -197,8 +210,8 @@ if ($success) {
 	addInvoicePayment(
 		$order_id,
 		$reference,
-		$paymentAmount,
-		0,
+		$invoicePaymentAmount,
+		$paymentFee,
 		$gatewayModuleName
 	);
 	logTransaction($gatewayModuleName, json_encode($_POST, JSON_PRETTY_PRINT), "Callback finish, Payment success validated.");

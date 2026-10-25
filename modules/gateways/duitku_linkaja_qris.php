@@ -97,6 +97,23 @@ function duitku_linkaja_qris_config()
             'Default' => '1440',
             'Description' => '<br>The validity period of the transaction before it expires. Max 1440 in minutes.',
         ),        
+        'feeBearer' => array(
+            'FriendlyName' => 'Payment Fee Borne By',
+            'Type' => 'dropdown',
+            'Options' => array(
+                'merchant' => 'Merchant',
+                'customer' => 'Customer',
+            ),
+            'Default' => 'merchant',
+            'Description' => 'Choose who pays the QRIS transaction fee. Merchant is the default and does not add a surcharge.',
+        ),
+        'customerFeePercent' => array(
+            'FriendlyName' => 'Customer Fee Percentage',
+            'Type' => 'text',
+            'Size' => '10',
+            'Default' => '0.70',
+            'Description' => 'Percentage surcharge applied only when Payment Fee Borne By is Customer. Example: 0.70 for 0.70%.',
+        ),
     );
 }
 /**
@@ -132,6 +149,8 @@ function duitku_linkaja_qris_link($params)
     unset($params['serverkey']); 
     unset($params['endpoint']); 
     unset($params['expiryPeriod']);
+    unset($params['feeBearer']);
+    unset($params['customerFeePercent']);
     unset($params['password']);
     unset($params['clientdetails']['password']);
 	$securityHash = Duitku_Helper::metode_hash(json_encode($params), $password);
