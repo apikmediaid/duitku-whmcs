@@ -112,7 +112,7 @@ function duitku_nusapay_qris_config()
             'Type' => 'text',
             'Size' => '10',
             'Default' => '0.70',
-            'Description' => 'Percentage surcharge applied only when Payment Fee Borne By is Customer. Example: 0.70 for 0.70%.',
+            'Description' => 'Assumed QRIS MDR rate used to gross up the customer payment when Customer bears the fee. Example: 0.70 for 0.70% MDR; gross-up is calculated as rate / (100 - rate).',
         ),
     );
 }

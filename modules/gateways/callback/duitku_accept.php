@@ -82,9 +82,10 @@ require_once __DIR__ . '/../duitku-lib/Duitku.php';
 	$qrPaymentMethods = array('NQ', 'SQ', 'LQ', 'GQ');
 	$feeBearer = isset($config['feeBearer']) ? strtolower(trim($config['feeBearer'])) : 'merchant';
 	$feePercent = isset($config['customerFeePercent']) ? (float)$config['customerFeePercent'] : 0.70;
-	// Apply surcharge only for individual QRIS channels when Customer is configured to bear the fee.
-	if (in_array($paymentMethod, $qrPaymentMethods, true) && $feeBearer === 'customer' && $feePercent > 0) {
-		$customerFeeAmount = (int)ceil($invoiceAmount * ($feePercent / 100));
+	// Apply a gross-up only for individual QRIS channels when Customer is configured to bear the fee.
+	// The configured percentage is the assumed MDR rate on the gross amount, so gross-up = rate / (100 - rate).
+	if (in_array($paymentMethod, $qrPaymentMethods, true) && $feeBearer === 'customer' && $feePercent > 0 && $feePercent < 100) {
+		$customerFeeAmount = (int)ceil($invoiceAmount * ($feePercent / (100 - $feePercent)));
 		$amount = $invoiceAmount + $customerFeeAmount;
 	}
 
