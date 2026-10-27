@@ -6,6 +6,7 @@ $whmcs->load_function("invoice");
 require_once __DIR__ . '/../duitku-lib/Duitku.php';
 
 $gatewayModuleName = "";
+$isQrisPayment = false;
 // check if the module is activated
 /*--- start ---*/
 $paymentCode= stripslashes($_POST['paymentCode']);
@@ -58,7 +59,7 @@ switch ($paymentCode) {
 	case "BA":
 		$gatewayModuleName = "duitku_vabca"; break;
 	case "LQ":
-		$gatewayModuleName = "duitku_linkaja_qris"; break;
+		$gatewayModuleName = "duitku_linkaja_qris"; $isQrisPayment = true; break;
 	case "IR":
 		$gatewayModuleName = "duitku_indomaret"; break;
 	case "BR":
@@ -66,13 +67,13 @@ switch ($paymentCode) {
 	case "NC":
 		$gatewayModuleName = "duitku_bnc"; break;
 	case "NQ":
-		$gatewayModuleName = "duitku_nobu_qris"; break;
+		$gatewayModuleName = "duitku_nobu_qris"; $isQrisPayment = true; break;
 	case "SQ":
-		$gatewayModuleName = "duitku_nusapay_qris"; break;
+		$gatewayModuleName = "duitku_nusapay_qris"; $isQrisPayment = true; break;
 	case "AT":
 		$gatewayModuleName = "duitku_atome"; break;
 	case "GQ":
-		$gatewayModuleName = "duitku_gudangvoucher_qris"; break;
+		$gatewayModuleName = "duitku_gudangvoucher_qris"; $isQrisPayment = true; break;
 	case "JP":
 		$gatewayModuleName = "duitku_jenius_pay"; break;
 	case "DM":
@@ -207,6 +208,14 @@ if ($success) {
 	 * @param float $paymentFee      Payment fee (optional)
 	 * @param string $gatewayModule  Gateway module name
 	 */
+	// Duitku callback amount remains the gross amount and has already been signature-checked
+	// and validated with Duitku. For QRIS gross-up, only settle the outstanding WHMCS invoice
+	// balance so the gross-up is not recorded as an overpayment in WHMCS.
+	$invoicePaymentAmount = $paymentAmount;
+	if ($isQrisPayment) {
+		$invoicePaymentAmount = getInvoiceBalance($order_id);
+	}
+
 	addInvoicePayment(
 		$order_id,
 		$reference,

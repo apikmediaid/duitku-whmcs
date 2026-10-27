@@ -90,6 +90,13 @@ function duitku_linkaja_qris_config()
             ),
             'Description' => 'Duitku Environment, select one that match with your merchant code and api key.',
         ),
+        'customerFeePercent' => array(
+            'FriendlyName' => 'Customer Fee Percentage',
+            'Type' => 'text',
+            'Size' => '10',
+            'Default' => '0.70',
+            'Description' => 'Assumed QRIS MDR rate used to gross up the customer payment when Customer bears the fee. Example: 0.70 for 0.70% MDR; gross-up is calculated as rate / (100 - rate).',
+        ),
 		'expiryPeriod' => array(
             'FriendlyName' => 'Duitku Expiry Period',
             'Type' => 'text',
@@ -106,13 +113,6 @@ function duitku_linkaja_qris_config()
             ),
             'Default' => 'merchant',
             'Description' => 'Choose who pays the QRIS transaction fee. Merchant is the default and does not add a surcharge.',
-        ),
-        'customerFeePercent' => array(
-            'FriendlyName' => 'Customer Fee Percentage',
-            'Type' => 'text',
-            'Size' => '10',
-            'Default' => '0.70',
-            'Description' => 'Assumed QRIS MDR rate used to gross up the customer payment when Customer bears the fee. Example: 0.70 for 0.70% MDR; gross-up is calculated as rate / (100 - rate).',
         ),
     );
 }
