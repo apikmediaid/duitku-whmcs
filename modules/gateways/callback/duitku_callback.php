@@ -184,18 +184,26 @@ if ($status == '00' && $validatedTransaction) {
 }
 
 if ($success) {
-	// QRIS surcharge is included in Duitku's collected amount, but must not be applied
-	// as invoice principal or it can overpay the WHMCS invoice.
+	// Duitku's callback amount is the gross amount paid by the customer.
+	// For QRIS, apply only the outstanding invoice balance in WHMCS; the
+	// customer-paid gross-up is not a merchant-paid gateway fee.
 	$invoicePaymentAmount = $paymentAmount;
 	$paymentFee = 0;
-	$qrPaymentMethods = array('NQ', 'SQ', 'LQ', 'GQ');
-	$feeBearer = isset($gatewayParams['feeBearer']) ? strtolower(trim($gatewayParams['feeBearer'])) : 'merchant';
-	if (in_array($paymentCode, $qrPaymentMethods, true) && $feeBearer === 'customer') {
+	if ($isQrisPayment) {
 		$invoiceBalance = (float)getInvoiceBalance($order_id);
-		if ($invoiceBalance > 0 && $paymentAmount >= $invoiceBalance) {
-			$invoicePaymentAmount = $invoiceBalance;
-			$paymentFee = max(0, $paymentAmount - $invoiceBalance);
+
+		// Do not mark an invoice paid if the confirmed amount is insufficient.
+		if ($invoiceBalance <= 0 || (float)$paymentAmount < $invoiceBalance) {
+			logTransaction(
+				$gatewayModuleName,
+				json_encode($_POST, JSON_PRETTY_PRINT),
+				"QRIS callback amount is below the outstanding invoice balance or the invoice is already settled."
+			);
+			header("HTTP/1.0 200 OK");
+			exit();
 		}
+
+		$invoicePaymentAmount = $invoiceBalance;
 	}
 	/**
 	 * Add Invoice Payment.
@@ -208,14 +216,6 @@ if ($success) {
 	 * @param float $paymentFee      Payment fee (optional)
 	 * @param string $gatewayModule  Gateway module name
 	 */
-	// Duitku callback amount remains the gross amount and has already been signature-checked
-	// and validated with Duitku. For QRIS gross-up, only settle the outstanding WHMCS invoice
-	// balance so the gross-up is not recorded as an overpayment in WHMCS.
-	$invoicePaymentAmount = $paymentAmount;
-	if ($isQrisPayment) {
-		$invoicePaymentAmount = getInvoiceBalance($order_id);
-	}
-
 	addInvoicePayment(
 		$order_id,
 		$reference,
